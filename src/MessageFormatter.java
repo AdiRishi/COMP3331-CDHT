@@ -1,6 +1,8 @@
 import java.net.InetSocketAddress;
 
 public class MessageFormatter {
+    public static int MAX_PING_SIZE = 2;
+    public static int MAX_TCP_SIZE = 10;
 
     /**
      * Creates an byte string containing the necessary ping data

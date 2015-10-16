@@ -21,6 +21,7 @@ public class cdht {
     public SuccessorManager successorManager;
     private Timer successorPingTimer;
     private PingServer udpServer;
+    private TcpServer tcpServer;
     private ExecutorService threadManager;
 
     public PingServer getUdpServer() {
@@ -41,6 +42,7 @@ public class cdht {
         PING_RATE = 5; //seconds
         successorPingTimer = new Timer("Successor Ping Timer");
         udpServer = new PingServer(this);
+        tcpServer = new TcpServer(this);
         successorManager = new SuccessorManager(this);
         threadManager = Executors.newFixedThreadPool(2);
     }
@@ -53,12 +55,13 @@ public class cdht {
         BufferedReader reader = new BufferedReader(new InputStreamReader(System.in));
         try {
             while ((line = reader.readLine()) != null) {
-                if (line.equals("Exit")) {
+                if (line.equals("quit")) {
                     break;
                 }
                 System.out.println(line);
             }
             self.udpServer.close();
+            self.tcpServer.close();
             self.successorPingTimer.cancel();
             self.threadManager.shutdown();
         } catch (IOException e) {
@@ -69,6 +72,7 @@ public class cdht {
     public void initialize() {
         successorPingTimer.scheduleAtFixedRate(successorManager, 0, PING_RATE * 1000);
         threadManager.execute(udpServer);
+        threadManager.execute(tcpServer);
     }
 
 
@@ -76,6 +80,10 @@ public class cdht {
      * Returns the udp port number that this peer would like to be bound to
      */
     public int getUdpPort() {
+        return PORT_BASE + ID;
+    }
+
+    public int getTcpPort() {
         return PORT_BASE + ID;
     }
 

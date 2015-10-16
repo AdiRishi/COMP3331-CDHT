@@ -35,14 +35,14 @@ public class PingServer implements Runnable {
      * Runs the server in non-blocking mode and creates worker threads to handle requests
      */
     public void run() {
-        ByteBuffer storeBuffer = ByteBuffer.allocate(2);
+        ByteBuffer storeBuffer = ByteBuffer.allocate(MessageFormatter.MAX_PING_SIZE);
         try {
             while (state) {
                 InetSocketAddress senderAddress = (InetSocketAddress) udpserver.receive(storeBuffer);
                 if (senderAddress == null) continue;
                 storeBuffer.flip(); //get buffer ready for read
                 //now do something with the data received
-                byte[] request = new byte[2];
+                byte[] request = new byte[MessageFormatter.MAX_PING_SIZE];
 
                 int i = 0;
                 while (storeBuffer.hasRemaining()) {
@@ -102,6 +102,7 @@ public class PingServer implements Runnable {
             if (MessageFormatter.isPingResponse(request)) {
                 MessageFormatter.PingData pingData = MessageFormatter.decodePing(request, senderAddress);
                 boundPeer.successorManager.registerPingResponse(pingData.getPeerId(), pingData.getSequenceNumber());
+                System.out.println("A ping response message was received from Peer " + pingData.getPeerId());
             } else if (MessageFormatter.isPingRequest(request)) {
                 MessageFormatter.PingData pingData = MessageFormatter.decodePing(request, senderAddress);
                 System.out.println("A ping request message was received from Peer " + pingData.getPeerId());
