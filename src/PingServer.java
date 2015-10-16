@@ -65,7 +65,7 @@ public class PingServer implements Runnable {
      */
     private void bindServer() {
         try {
-            udpserver.bind(new InetSocketAddress(boundPeer.getUdpPort()));
+            udpserver.bind(new InetSocketAddress("localhost",boundPeer.getUdpPort()));
             //we will configure blocking to false
             udpserver.configureBlocking(false);
         } catch (IOException e) {
@@ -105,6 +105,7 @@ public class PingServer implements Runnable {
                 System.out.println("A ping response message was received from Peer " + pingData.getPeerId());
             } else if (MessageFormatter.isPingRequest(request)) {
                 MessageFormatter.PingData pingData = MessageFormatter.decodePing(request, senderAddress);
+                boundPeer.successorManager.registerPingRequest(pingData.getPeerId());
                 System.out.println("A ping request message was received from Peer " + pingData.getPeerId());
                 byte[] resp = MessageFormatter.encodePingResponse(request);
                 response = (ByteBuffer) (ByteBuffer.allocate(resp.length)).put(resp).flip();

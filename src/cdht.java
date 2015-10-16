@@ -1,6 +1,7 @@
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
+import java.net.InetSocketAddress;
 import java.util.Timer;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -13,8 +14,7 @@ import java.util.concurrent.Executors;
  */
 public class cdht {
     private final int ID;
-    private final int successor1_ID;
-    private final int successor2_ID;
+
     public static final int PORT_BASE = 50000;
     //time between each successive ping (seconds)
     private final int PING_RATE;
@@ -36,14 +36,12 @@ public class cdht {
      * @param s2_ID   range 0-255
      */
     public cdht(int self_ID, int s1_ID, int s2_ID) {
-        successor1_ID = s1_ID;
-        successor2_ID = s2_ID;
         ID = self_ID;
         PING_RATE = 5; //seconds
         successorPingTimer = new Timer("Successor Ping Timer");
         udpServer = new PingServer(this);
         tcpServer = new TcpServer(this);
-        successorManager = new SuccessorManager(this);
+        successorManager = new SuccessorManager(this, s1_ID, s2_ID);
         threadManager = Executors.newFixedThreadPool(2);
     }
 
@@ -60,6 +58,7 @@ public class cdht {
                 }
                 System.out.println(line);
             }
+//            self.shutdown();
             self.udpServer.close();
             self.tcpServer.close();
             self.successorPingTimer.cancel();
@@ -87,13 +86,13 @@ public class cdht {
         return PORT_BASE + ID;
     }
 
-    public int getSuccessor1UdpPort() {
-        return PORT_BASE + successor1_ID;
-    }
+//    public int getSuccessor1UdpPort() {
+//        return PORT_BASE + getSuccessor1_ID();
+//    }
 
-    public int getSuccessor2UdpPort() {
-        return PORT_BASE + successor2_ID;
-    }
+//    public int getSuccessor2UdpPort() {
+//        return PORT_BASE + getSuccessor2_ID();
+//    }
 
 
     /*
@@ -129,11 +128,17 @@ public class cdht {
         return result;
     }
 
-    public int getSuccessor1_ID() {
-        return successor1_ID;
-    }
 
-    public int getSuccessor2_ID() {
-        return successor2_ID;
+    /**
+     * Initiates a graceful quit.
+     * This peer will sent successor information to its predecessors
+     */
+    private void shutdown() {
+        int[] predecessorIds = successorManager.getPredecessors();
+        String data = "D:"+successorManager.getSuccessor1_ID()+","+successorManager.getSuccessor2_ID();
+        for (int i = 0; i < predecessorIds.length;i++) {
+            InetSocketAddress address = new InetSocketAddress("localhost",PORT_BASE+predecessorIds[i]);
+            tcpServer.send(data.getBytes(),address);
+        }
     }
 }

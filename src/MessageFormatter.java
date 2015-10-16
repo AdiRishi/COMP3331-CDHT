@@ -1,8 +1,13 @@
 import java.net.InetSocketAddress;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 public class MessageFormatter {
     public static int MAX_PING_SIZE = 2;
-    public static int MAX_TCP_SIZE = 10;
+    public static int MAX_TCP_SIZE = 9;
+    private static String departingPattern = "D:(\\d+),(\\d+)";
+
+    /* ------------------------ UDP encoding functions ----------------------------- */
 
     /**
      * Creates an byte string containing the necessary ping data
@@ -97,5 +102,25 @@ public class MessageFormatter {
         public int getPeerId() {
             return peerId;
         }
+    }
+
+    /* ------------------------ TCP encoding functions ----------------------------- */
+
+    public static byte[] encodeDepartingMessage (int successor1, int successor2) {
+        return ("D:"+successor1+","+successor2).getBytes();
+    }
+
+    public static boolean isDepartingMessage (byte[] data) {
+        String input = new String(data);
+        input = input.trim();
+        return input.matches(departingPattern);
+    }
+
+    public static int[] decodeDepartingMessage (byte[] data) {
+        String input = new String(data).trim();
+        System.out.println(input.length());
+        Matcher m = Pattern.compile(departingPattern).matcher(input);
+        System.out.println(m.find());
+        return new int[] {Integer.parseInt(m.group(1)),Integer.parseInt(m.group(2))};
     }
 }

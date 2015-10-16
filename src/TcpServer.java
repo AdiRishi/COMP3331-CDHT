@@ -1,5 +1,6 @@
 import java.io.IOException;
 import java.net.InetSocketAddress;
+import java.net.SocketAddress;
 import java.nio.ByteBuffer;
 import java.nio.channels.ServerSocketChannel;
 import java.nio.channels.SocketChannel;
@@ -17,7 +18,7 @@ public class TcpServer implements Runnable {
 
     public TcpServer(cdht boundPeer) {
         this.boundPeer = boundPeer;
-        threadManager = Executors.newFixedThreadPool(3);
+        threadManager = Executors.newFixedThreadPool(5);
         state = true;
         try {
             tcpServer = ServerSocketChannel.open();
@@ -39,7 +40,7 @@ public class TcpServer implements Runnable {
                 if (socketChannel == null) continue;
                 //at this point we have a connection
                 System.out.println("We have a connection on TCP BOYS");
-                threadManager.execute(new TcpWorker(socketChannel));
+                threadManager.execute(new TcpReceiver(socketChannel));
             }
             tcpServer.close();
             threadManager.shutdown();
@@ -60,7 +61,7 @@ public class TcpServer implements Runnable {
      */
     private void bindServer() {
         try {
-            tcpServer.bind(new InetSocketAddress(boundPeer.getTcpPort()));
+            tcpServer.bind(new InetSocketAddress("localhost",boundPeer.getTcpPort()));
             //we will set it to non-blocking
             tcpServer.configureBlocking(false);
         } catch (IOException e) {
@@ -68,12 +69,22 @@ public class TcpServer implements Runnable {
         }
     }
 
+    public void send (byte[] data, SocketAddress reveiverAddress) {
+        ByteBuffer d = (ByteBuffer) (ByteBuffer.allocate(data.length)).put(data).flip();
+        try {
+            SocketChannel socketChannel = SocketChannel.open();
+            threadManager.execute(new TcpSender(socketChannel,reveiverAddress,d));
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+    }
 
-    private class TcpWorker implements Runnable {
+
+    private class TcpReceiver implements Runnable {
         SocketChannel socketChannel;
         ByteBuffer storeBuffer;
 
-        public TcpWorker(SocketChannel incommingConnection) {
+        public TcpReceiver(SocketChannel incommingConnection) {
             socketChannel = incommingConnection;
             storeBuffer = ByteBuffer.allocate(MessageFormatter.MAX_TCP_SIZE);
         }
@@ -90,20 +101,49 @@ public class TcpServer implements Runnable {
                 }
 
                 //for now lets just act as an echo server
+                if (MessageFormatter.isDepartingMessage(request)) {
+                    System.out.println("The departing message is - " + new String(request));
+                    MessageFormatter.decodeDepartingMessage(request);
+                } else {
 
-                ByteBuffer response = ByteBuffer.allocate(MessageFormatter.MAX_TCP_SIZE);
-                response.put(request);
-                response.flip();
+                    ByteBuffer response = ByteBuffer.allocate(MessageFormatter.MAX_TCP_SIZE);
+                    response.put(request);
+                    response.flip();
 
-                while (response.hasRemaining()) {
-                    socketChannel.write(response);
+                    while (response.hasRemaining()) {
+                        socketChannel.write(response);
+                    }
                 }
-
                 socketChannel.close();
 
             } catch (IOException e) {
                 e.printStackTrace();
             }
+        }
+    }
+
+    private class TcpSender implements Runnable {
+        SocketChannel socketChannel;
+        SocketAddress socketAddress;
+        ByteBuffer data;
+
+        public TcpSender (SocketChannel socketChannel, SocketAddress socketAddress,ByteBuffer data) {
+            this.data = data;
+            this.socketChannel = socketChannel;
+            this.socketAddress = socketAddress;
+        }
+
+        @Override
+        public void run() {
+            try {
+                socketChannel.configureBlocking(true);
+                socketChannel.connect(socketAddress);
+                socketChannel.write(data);
+                socketChannel.close();
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+
         }
     }
 
