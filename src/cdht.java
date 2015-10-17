@@ -2,6 +2,7 @@ import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.net.InetSocketAddress;
+import java.util.ArrayList;
 import java.util.Timer;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -13,12 +14,12 @@ import java.util.concurrent.Executors;
  * A peer initialized with id = n will have a ping server at UDP port 50000 + n
  */
 public class cdht {
-    private final int ID;
+    public final int ID;
 
     public static final int PORT_BASE = 50000;
     //time between each successive ping (seconds)
     private final int PING_RATE;
-    public SuccessorManager successorManager;
+    public PeerTracker peerTracker;
     private Timer successorPingTimer;
     private PingServer udpServer;
     private TcpServer tcpServer;
@@ -41,7 +42,7 @@ public class cdht {
         successorPingTimer = new Timer("Successor Ping Timer");
         udpServer = new PingServer(this);
         tcpServer = new TcpServer(this);
-        successorManager = new SuccessorManager(this, s1_ID, s2_ID);
+        peerTracker = new PeerTracker(this, s1_ID, s2_ID);
         threadManager = Executors.newFixedThreadPool(2);
     }
 
@@ -58,7 +59,7 @@ public class cdht {
                 }
                 System.out.println(line);
             }
-//            self.shutdown();
+            self.shutdown();
             self.udpServer.close();
             self.tcpServer.close();
             self.successorPingTimer.cancel();
@@ -69,7 +70,7 @@ public class cdht {
     }
 
     public void initialize() {
-        successorPingTimer.scheduleAtFixedRate(successorManager, 0, PING_RATE * 1000);
+        successorPingTimer.scheduleAtFixedRate(peerTracker, 0, PING_RATE * 1000);
         threadManager.execute(udpServer);
         threadManager.execute(tcpServer);
     }
@@ -134,11 +135,13 @@ public class cdht {
      * This peer will sent successor information to its predecessors
      */
     private void shutdown() {
-        int[] predecessorIds = successorManager.getPredecessors();
-        String data = "D:"+successorManager.getSuccessor1_ID()+","+successorManager.getSuccessor2_ID();
-        for (int i = 0; i < predecessorIds.length;i++) {
-            InetSocketAddress address = new InetSocketAddress("localhost",PORT_BASE+predecessorIds[i]);
-            tcpServer.send(data.getBytes(),address);
+        ArrayList<Integer> predecessorIds = peerTracker.getPredecessors();
+        ArrayList<Integer> successors = peerTracker.getSuccessors();
+        if (predecessorIds == null || successors == null) return;
+        byte[] data = MessageFormatter.encodeDepartingMessage(ID,successors);
+        for (int i = 0; i < predecessorIds.size(); i++) {
+            InetSocketAddress address = new InetSocketAddress("localhost", PORT_BASE + predecessorIds.get(i));
+            tcpServer.send(data, address);
         }
     }
 }

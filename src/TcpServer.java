@@ -4,6 +4,7 @@ import java.net.SocketAddress;
 import java.nio.ByteBuffer;
 import java.nio.channels.ServerSocketChannel;
 import java.nio.channels.SocketChannel;
+import java.util.ArrayList;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
@@ -39,7 +40,6 @@ public class TcpServer implements Runnable {
                 socketChannel = tcpServer.accept();
                 if (socketChannel == null) continue;
                 //at this point we have a connection
-                System.out.println("We have a connection on TCP BOYS");
                 threadManager.execute(new TcpReceiver(socketChannel));
             }
             tcpServer.close();
@@ -61,7 +61,7 @@ public class TcpServer implements Runnable {
      */
     private void bindServer() {
         try {
-            tcpServer.bind(new InetSocketAddress("localhost",boundPeer.getTcpPort()));
+            tcpServer.bind(new InetSocketAddress("localhost", boundPeer.getTcpPort()));
             //we will set it to non-blocking
             tcpServer.configureBlocking(false);
         } catch (IOException e) {
@@ -69,11 +69,11 @@ public class TcpServer implements Runnable {
         }
     }
 
-    public void send (byte[] data, SocketAddress reveiverAddress) {
+    public void send(byte[] data, SocketAddress reveiverAddress) {
         ByteBuffer d = (ByteBuffer) (ByteBuffer.allocate(data.length)).put(data).flip();
         try {
             SocketChannel socketChannel = SocketChannel.open();
-            threadManager.execute(new TcpSender(socketChannel,reveiverAddress,d));
+            threadManager.execute(new TcpSender(socketChannel, reveiverAddress, d));
         } catch (IOException e) {
             e.printStackTrace();
         }
@@ -102,10 +102,11 @@ public class TcpServer implements Runnable {
 
                 //for now lets just act as an echo server
                 if (MessageFormatter.isDepartingMessage(request)) {
-                    System.out.println("The departing message is - " + new String(request));
-                    MessageFormatter.decodeDepartingMessage(request);
+                    ArrayList<Integer> decodedMessage = MessageFormatter.decodeDepartingMessage(request);
+                    boundPeer.peerTracker.registerGracefulDepart(decodedMessage.get(0),
+                            decodedMessage.subList(1,decodedMessage.size()));
                 } else {
-
+                    //act as an echo server
                     ByteBuffer response = ByteBuffer.allocate(MessageFormatter.MAX_TCP_SIZE);
                     response.put(request);
                     response.flip();
@@ -127,7 +128,7 @@ public class TcpServer implements Runnable {
         SocketAddress socketAddress;
         ByteBuffer data;
 
-        public TcpSender (SocketChannel socketChannel, SocketAddress socketAddress,ByteBuffer data) {
+        public TcpSender(SocketChannel socketChannel, SocketAddress socketAddress, ByteBuffer data) {
             this.data = data;
             this.socketChannel = socketChannel;
             this.socketAddress = socketAddress;

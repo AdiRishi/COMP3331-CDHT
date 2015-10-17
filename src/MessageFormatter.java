@@ -1,11 +1,13 @@
 import java.net.InetSocketAddress;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 public class MessageFormatter {
     public static int MAX_PING_SIZE = 2;
-    public static int MAX_TCP_SIZE = 9;
-    private static String departingPattern = "D:(\\d+),(\\d+)";
+    public static int MAX_TCP_SIZE = 13;
+    private static String departingPattern = "D:(\\d+)(?:,\\d+)+";
 
     /* ------------------------ UDP encoding functions ----------------------------- */
 
@@ -106,21 +108,36 @@ public class MessageFormatter {
 
     /* ------------------------ TCP encoding functions ----------------------------- */
 
-    public static byte[] encodeDepartingMessage (int successor1, int successor2) {
-        return ("D:"+successor1+","+successor2).getBytes();
+    public static byte[] encodeDepartingMessage(int peerId,List<Integer> successors) {
+        String s = "D:" + peerId;
+        for (int i : successors) {
+            s += "," + i;
+        }
+        return s.getBytes();
     }
 
-    public static boolean isDepartingMessage (byte[] data) {
+    public static boolean isDepartingMessage(byte[] data) {
         String input = new String(data);
         input = input.trim();
+        System.out.println("MESSAGE - !!" + input + "!!");
         return input.matches(departingPattern);
     }
 
-    public static int[] decodeDepartingMessage (byte[] data) {
+    /**
+     * Returns an int[] array containing decoded info
+     * [0] -> sending peer ID
+     * [1] -> successor 1
+     * [2] -> successor 2
+     * NOTE: The array may contain 1 or 2 successors
+     */
+    public static ArrayList<Integer> decodeDepartingMessage(byte[] data) {
         String input = new String(data).trim();
-        System.out.println(input.length());
-        Matcher m = Pattern.compile(departingPattern).matcher(input);
-        System.out.println(m.find());
-        return new int[] {Integer.parseInt(m.group(1)),Integer.parseInt(m.group(2))};
+        Pattern p = Pattern.compile("\\d+");
+        Matcher m = p.matcher(input);
+        ArrayList<Integer> r = new ArrayList<Integer>();
+        while (m.find()) {
+            r.add(Integer.parseInt(m.group()));
+        }
+        return r;
     }
 }
