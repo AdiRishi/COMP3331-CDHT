@@ -138,6 +138,7 @@ public class cdht {
         ArrayList<Integer> predecessorIds = peerTracker.getPredecessors();
         ArrayList<Integer> successors = peerTracker.getSuccessors();
         if (predecessorIds == null || successors == null) return;
+        System.out.println("Sending quit to - " + predecessorIds);
         byte[] data = MessageFormatter.encodeDepartingMessage(ID,successors);
         for (int i = 0; i < predecessorIds.size(); i++) {
             InetSocketAddress address = new InetSocketAddress("localhost", PORT_BASE + predecessorIds.get(i));

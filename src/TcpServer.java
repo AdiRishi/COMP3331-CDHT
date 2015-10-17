@@ -1,4 +1,5 @@
 import java.io.IOException;
+import java.net.ConnectException;
 import java.net.InetSocketAddress;
 import java.net.SocketAddress;
 import java.nio.ByteBuffer;
@@ -141,8 +142,12 @@ public class TcpServer implements Runnable {
                 socketChannel.connect(socketAddress);
                 socketChannel.write(data);
                 socketChannel.close();
-            } catch (IOException e) {
-                e.printStackTrace();
+            } catch (ConnectException ex) {
+                //the peer is most likely dead
+                InetSocketAddress address = (InetSocketAddress) socketAddress;
+                boundPeer.peerTracker.registerDeathDetection(MessageFormatter.determinePeer(address));
+            } catch (IOException ex) {
+                ex.printStackTrace();
             }
 
         }

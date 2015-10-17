@@ -119,7 +119,6 @@ public class MessageFormatter {
     public static boolean isDepartingMessage(byte[] data) {
         String input = new String(data);
         input = input.trim();
-        System.out.println("MESSAGE - !!" + input + "!!");
         return input.matches(departingPattern);
     }
 
