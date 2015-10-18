@@ -29,6 +29,10 @@ public class cdht {
         return udpServer;
     }
 
+    public TcpServer getTcpServer () {
+        return tcpServer;
+    }
+
     /**
      * Initialize Peer with its ID and two successors in the CDHT
      *
@@ -86,15 +90,6 @@ public class cdht {
     public int getTcpPort() {
         return PORT_BASE + ID;
     }
-
-//    public int getSuccessor1UdpPort() {
-//        return PORT_BASE + getSuccessor1_ID();
-//    }
-
-//    public int getSuccessor2UdpPort() {
-//        return PORT_BASE + getSuccessor2_ID();
-//    }
-
 
     /*
     Function for verifying that the application was called correctly

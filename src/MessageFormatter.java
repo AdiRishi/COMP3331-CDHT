@@ -7,7 +7,9 @@ import java.util.regex.Pattern;
 public class MessageFormatter {
     public static int MAX_PING_SIZE = 2;
     public static int MAX_TCP_SIZE = 13;
-    private static String departingPattern = "D:(\\d+)(?:,\\d+)+";
+    private static String departingPattern = "D:(\\d+)(,\\d+)+";
+    private static String sRequestPattern = "SR:(\\d+)";
+    private static String sResponsePattern = "Sr:(\\d+)(,\\d+)+";
 
     /* ------------------------ UDP encoding functions ----------------------------- */
 
@@ -53,11 +55,11 @@ public class MessageFormatter {
 
     /**
      * Determines what peer sent the message
-     *
+     * NOTE: the socketAddress must have been received by a UDP message
      * @param peerAddress the address information
      * @return The peer ID
      */
-    public static int determinePeer(InetSocketAddress peerAddress) {
+    public static int determineUdpPeer(InetSocketAddress peerAddress) {
         return peerAddress.getPort() - cdht.PORT_BASE;
     }
 
@@ -74,7 +76,7 @@ public class MessageFormatter {
             System.err.println("Request type not recognised");
             return null;
         }
-        return new Ping(request[0], MessageFormatter.determinePeer(peerAddress));
+        return new Ping(request[0], MessageFormatter.determineUdpPeer(peerAddress));
     }
 
     /**
@@ -108,6 +110,20 @@ public class MessageFormatter {
 
     /* ------------------------ TCP encoding functions ----------------------------- */
 
+    /**
+     * Determines what peer sent the message
+     * NOTE: the socketAddress must have been received by a UDP message
+     * @param request the request given by the peer
+     * @return The peer ID
+     */
+    public static int determineTcpPeer (byte[] request) {
+        String input = new String(request);
+        input = input.trim();
+        Matcher m = Pattern.compile("\\d+").matcher(input);
+        m.find();
+        return Integer.parseInt(m.group());
+    }
+
     public static byte[] encodeDepartingMessage(int peerId,List<Integer> successors) {
         String s = "D:" + peerId;
         for (int i : successors) {
@@ -123,7 +139,7 @@ public class MessageFormatter {
     }
 
     /**
-     * Returns an int[] array containing decoded info
+     * Returns an ArrayList containing decoded info
      * [0] -> sending peer ID
      * [1] -> successor 1
      * [2] -> successor 2
@@ -138,5 +154,46 @@ public class MessageFormatter {
             r.add(Integer.parseInt(m.group()));
         }
         return r;
+    }
+
+    public static byte[] encodeSuccessorRequest(int requestingPeer) {
+        return ("SR:"+requestingPeer).getBytes();
+    }
+
+    public static boolean isSuccessorRequest (byte[] request) {
+        String input = new String(request);
+        input = input.trim();
+        return input.matches(sRequestPattern);
+    }
+
+    public static byte[] encodeSuccessorResponse (int peerId, List<Integer> successors) {
+        String s = "Sr:" + peerId;
+        for (int i : successors) {
+            s += "," + i;
+        }
+        return s.getBytes();
+    }
+
+    /**
+     * Returns an ArrayList containing decoded info
+     * [0] -> sending peer ID
+     * [1] -> successor 1
+     * [2] -> successor 2
+     * NOTE: The array may contain 1 or 2 successors
+     */
+    public static ArrayList<Integer> decodeSuccessorResponse (byte[] data) {
+        String input = new String(data);
+        Matcher m = Pattern.compile("\\d+").matcher(input);
+        ArrayList<Integer> r = new ArrayList<Integer>();
+        while (m.find()) {
+            r.add(Integer.parseInt(m.group()));
+        }
+        return r;
+    }
+
+    public static boolean isSuccessorResponse (byte[] request) {
+        String input = new String(request);
+        input = input.trim();
+        return input.matches(sResponsePattern);
     }
 }

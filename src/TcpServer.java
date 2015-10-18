@@ -106,6 +106,17 @@ public class TcpServer implements Runnable {
                     ArrayList<Integer> decodedMessage = MessageFormatter.decodeDepartingMessage(request);
                     boundPeer.peerTracker.registerGracefulDepart(decodedMessage.get(0),
                             decodedMessage.subList(1,decodedMessage.size()));
+                } else if (MessageFormatter.isSuccessorRequest(request)) {
+                    byte[] response = MessageFormatter.encodeSuccessorResponse(boundPeer.ID,
+                            boundPeer.peerTracker.getSuccessors());
+                    InetSocketAddress address = new InetSocketAddress("localhost",
+                            cdht.PORT_BASE + MessageFormatter.determineTcpPeer(request));
+                    send(response, address);
+                } else if (MessageFormatter.isSuccessorResponse(request)) {
+//                    System.out.println("Successor response received - " + new String(request));
+                    ArrayList<Integer> decodedMessage = MessageFormatter.decodeSuccessorResponse(request);
+                    boundPeer.peerTracker.registerSuccessorResponse(decodedMessage.get(0),
+                            decodedMessage.subList(1,decodedMessage.size()));
                 } else {
                     //act as an echo server
                     ByteBuffer response = ByteBuffer.allocate(MessageFormatter.MAX_TCP_SIZE);
@@ -145,7 +156,7 @@ public class TcpServer implements Runnable {
             } catch (ConnectException ex) {
                 //the peer is most likely dead
                 InetSocketAddress address = (InetSocketAddress) socketAddress;
-                boundPeer.peerTracker.registerDeathDetection(MessageFormatter.determinePeer(address));
+                boundPeer.peerTracker.registerDeathDetection(MessageFormatter.determineUdpPeer(address));
             } catch (IOException ex) {
                 ex.printStackTrace();
             }

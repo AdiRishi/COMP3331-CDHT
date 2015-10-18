@@ -7,6 +7,7 @@ public class PeerTracker extends TimerTask {
     private cdht employer;
     //these are a list of ping Sequence numbers that are yet to be acknowledged
     private LinkedList<Integer> pastPingRequests;
+    private ArrayList<Integer> deathList;
 
 
     public PeerTracker(cdht employer, int successor1_ID, int successor2_ID) {
@@ -15,6 +16,7 @@ public class PeerTracker extends TimerTask {
         successors.add(new Peer(successor1_ID));
         successors.add(new Peer(successor2_ID));
         pastPingRequests = new LinkedList<Integer>();
+        deathList = new ArrayList<Integer>();
     }
 
     @Override
@@ -33,10 +35,16 @@ public class PeerTracker extends TimerTask {
      * Also detects successor death
      */
     private void analyseFailedPings() {
+        ArrayList<Integer> deadPeers = new ArrayList<Integer>(2);
+        //the deadPeers array was created to stop concurrent modification exceptions
         for (Peer s : successors) {
             if (s.isDead()) {
-                handleSuccessorDeath(s.ID);
+                deadPeers.add(s.ID);
+                deathList.add(s.ID);
             }
+        }
+        for (int s : deadPeers) {
+            handleSuccessorDeath(s);
         }
     }
 
@@ -47,6 +55,12 @@ public class PeerTracker extends TimerTask {
      */
     private void handleSuccessorDeath(int successorId) {
         System.out.println("Peer " + successorId + " is no longer alive");
+        removeFromSuccessors(successorId);
+        removeFromPastPings(successorId);
+        //now we ask our remaining successor for its next two successors
+        byte[] request = MessageFormatter.encodeSuccessorRequest(employer.ID);
+        InetSocketAddress address = new InetSocketAddress("localhost",successors.get(0).getTcpPort());
+        employer.getTcpServer().send(request,address);
     }
 
     /**
@@ -104,22 +118,29 @@ public class PeerTracker extends TimerTask {
         removeFromSuccessors(peerId);
         //now we add the lower of the two successors to our own
         for (int s : givenSucc) {
-            if (s == employer.ID) continue;
-            boolean contains = false;
-            for (Peer p : successors) {
-                if (p.ID == s) {
-                    contains = true;
-                    break;
-                }
-            }
-            if (!contains) {
-                successors.add(new Peer(s));
-                break; //we only ever need to add one successor
+            if (addToSuccessors(s)) break;
+        }
+        System.out.println("My first successor is now " + ((successors.size()>0)? "peer "+successors.get(0):"Nothing"));
+        System.out.println("My second successor is now " + ((successors.size()>1)? "peer "+successors.get(1):"Nothing"));
+    }
+
+    /**
+     * This method should be called every time a ping sends a successor response message
+     * This method will initiate the process of connecting to the next peers
+     * @param peerId the responding peer
+     * @param givenSucc the successor information given by said peer
+     */
+    public void registerSuccessorResponse (int peerId, List<Integer> givenSucc) {
+        System.out.println("A successor response was received - " + new ArrayList<Integer>(givenSucc));
+        for (int s : givenSucc) {
+            if (deathList.contains(s)) {
+                deathList.remove((Integer)s);
+            } else {
+                if (addToSuccessors(s)) break;
             }
         }
-        Collections.sort(successors);
-        System.out.println("My first successor is now peer " + ((successors.size()>0)? successors.get(0):"Nothing"));
-        System.out.println("My first successor is now peer " + ((successors.size()>1)? successors.get(1):"Nothing"));
+        System.out.println("My first successor is now " + ((successors.size()>0)? "peer "+successors.get(0):"Nothing"));
+        System.out.println("My second successor is now " + ((successors.size()>1)? "peer "+successors.get(1):"Nothing"));
     }
 
     private void removeFromPastPings (int peerId) {
@@ -138,20 +159,23 @@ public class PeerTracker extends TimerTask {
         }
     }
 
-    public int getSuccessor1_ID() {
-        if (successors.size() > 0) {
-            return successors.get(0).ID;
-        } else {
-            return -1;
+    /**
+     * Returns success or faliure
+     * @param s successor id
+     */
+    private boolean addToSuccessors (int s) {
+        if (s == employer.ID) return false;
+        boolean contains = false;
+        for (Peer p : successors) {
+            if (p.ID == s) {
+                contains = true;
+                break;
+            }
         }
-    }
-
-    public int getSuccessor2_ID() {
-        if (successors.size() > 1) {
-            return successors.get(1).ID;
-        } else {
-            return -1;
+        if (!contains) {
+            successors.add(new Peer(s));
         }
+        return !contains;
     }
 
     public ArrayList<Integer> getSuccessors () {
@@ -159,7 +183,6 @@ public class PeerTracker extends TimerTask {
         for (Peer p : successors) {
             r.add(p.ID);
         }
-        Collections.sort(r);
         return r;
     }
 
@@ -175,9 +198,9 @@ public class PeerTracker extends TimerTask {
         for (; i >= 0; i--) {
             if (!r.contains(pastPingRequests.get(i))) {
                 r.add(pastPingRequests.get(i));
+                if (r.size() == 2) break;
             }
         }
-        Collections.sort(r);
         return r;
     }
 
@@ -198,6 +221,10 @@ public class PeerTracker extends TimerTask {
         }
 
         public int getUdpPort() {
+            return cdht.PORT_BASE + ID;
+        }
+
+        public int getTcpPort() {
             return cdht.PORT_BASE + ID;
         }
 

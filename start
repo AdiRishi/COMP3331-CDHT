@@ -1,0 +1,12 @@
+#!/usr/local/bin/bash
+for ((i=0; i<$1; i++))
+do
+	# echo "java -cp out/production/Circular\ DHT/ cdht $i $((($i+1) % ($1))) $((($i+2) % ($1)))"
+	xterm -title "Peer $i" -e "java -cp out/production/Circular\ DHT/ cdht $i $((($i+1) % ($1))) $((($i+2) % ($1)))" &	
+done
+
+# xterm -title "Peer 0" -e "java -cp out/production/Circular\ DHT/ cdht 0 1 2" &
+# xterm -title "Peer 1" -e "java -cp out/production/Circular\ DHT/ cdht 1 2 3" &
+# xterm -title "Peer 2" -e "java -cp out/production/Circular\ DHT/ cdht 2 3 4" &
+# xterm -title "Peer 3" -e "java -cp out/production/Circular\ DHT/ cdht 3 4 0" &
+# xterm -title "Peer 4" -e "java -cp out/production/Circular\ DHT/ cdht 4 0 1" &
