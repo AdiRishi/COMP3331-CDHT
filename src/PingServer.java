@@ -8,6 +8,8 @@ import java.util.concurrent.Executors;
 
 /**
  * The ping server listens for UDP data on port 50000 + boundPeer.getUdpPort()
+ *
+ * @author Adiswhar Rishi
  */
 public class PingServer implements Runnable {
     private DatagramChannel udpserver;
@@ -102,11 +104,11 @@ public class PingServer implements Runnable {
             if (MessageFormatter.isPingResponse(request)) {
                 MessageFormatter.PingData pingData = MessageFormatter.decodePing(request, senderAddress);
                 boundPeer.peerTracker.registerPingResponse(pingData.getPeerId(), pingData.getSequenceNumber());
-                System.out.println("A ping response message was received from Peer " + pingData.getPeerId());
+//                System.out.println("A ping response message was received from Peer " + pingData.getPeerId());
             } else if (MessageFormatter.isPingRequest(request)) {
                 MessageFormatter.PingData pingData = MessageFormatter.decodePing(request, senderAddress);
                 boundPeer.peerTracker.registerPingRequest(pingData.getPeerId());
-                System.out.println("A ping request message was received from Peer " + pingData.getPeerId());
+//                System.out.println("A ping request message was received from Peer " + pingData.getPeerId());
                 byte[] resp = MessageFormatter.encodePingResponse(request);
                 response = (ByteBuffer) (ByteBuffer.allocate(resp.length)).put(resp).flip();
             } else {

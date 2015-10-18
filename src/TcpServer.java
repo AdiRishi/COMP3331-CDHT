@@ -10,7 +10,9 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
 /**
- * * The TCP server listens for TCP data on port 50000 + boundPeer.getUdpPort()
+ * * The TCP server listens for TCP data on port 50000 + boundPeer.getTcpPort()
+ *
+ * @author Adiswhar Rishi
  */
 public class TcpServer implements Runnable {
     private cdht boundPeer;
@@ -100,12 +102,11 @@ public class TcpServer implements Runnable {
                 while (storeBuffer.hasRemaining()) {
                     request[i++] = storeBuffer.get();
                 }
-
                 //for now lets just act as an echo server
                 if (MessageFormatter.isDepartingMessage(request)) {
                     ArrayList<Integer> decodedMessage = MessageFormatter.decodeDepartingMessage(request);
                     boundPeer.peerTracker.registerGracefulDepart(decodedMessage.get(0),
-                            decodedMessage.subList(1,decodedMessage.size()));
+                            decodedMessage.subList(1, decodedMessage.size()));
                 } else if (MessageFormatter.isSuccessorRequest(request)) {
                     byte[] response = MessageFormatter.encodeSuccessorResponse(boundPeer.ID,
                             boundPeer.peerTracker.getSuccessors());
@@ -113,10 +114,31 @@ public class TcpServer implements Runnable {
                             cdht.PORT_BASE + MessageFormatter.determineTcpPeer(request));
                     send(response, address);
                 } else if (MessageFormatter.isSuccessorResponse(request)) {
-//                    System.out.println("Successor response received - " + new String(request));
                     ArrayList<Integer> decodedMessage = MessageFormatter.decodeSuccessorResponse(request);
                     boundPeer.peerTracker.registerSuccessorResponse(decodedMessage.get(0),
-                            decodedMessage.subList(1,decodedMessage.size()));
+                            decodedMessage.subList(1, decodedMessage.size()));
+                } else if (MessageFormatter.isFileRequest(request)) {
+                    ArrayList<Integer> decodedMessage = MessageFormatter.decodeFileRequest(request);
+                    if (FileTracker.hasFile(boundPeer, "" + decodedMessage.get(1))) {
+                        System.out.println("File " + decodedMessage.get(1) + " is here.");
+                        byte[] response = MessageFormatter.encodeFileResponse(boundPeer.ID,
+                                "" + decodedMessage.get(0), true, decodedMessage.get(0));
+                        InetSocketAddress address = new InetSocketAddress("localhost",
+                                cdht.PORT_BASE + decodedMessage.get(0));
+                        send(response, address);
+                        System.out.println("A response message, destined for peer " +
+                                decodedMessage.get(0) + ", has been sent.");
+                    } else {
+                        System.out.println("File " + decodedMessage.get(1) + " is not stored here.");
+                        InetSocketAddress address = new InetSocketAddress("localhost",
+                                cdht.PORT_BASE + boundPeer.peerTracker.getSuccessorId(1));
+                        send(request, address);
+                        System.out.println("File request message has been forwarded to my successor");
+                    }
+                } else if (MessageFormatter.isFileResponse(request)) {
+                    ArrayList<Integer> decodedMessage = MessageFormatter.decodeFileResponse(request);
+                    System.out.println("Received a response message from peer " +
+                            decodedMessage.get(0) + ", which has the file " + decodedMessage.get(1));
                 } else {
                     //act as an echo server
                     ByteBuffer response = ByteBuffer.allocate(MessageFormatter.MAX_TCP_SIZE);

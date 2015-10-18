@@ -6,12 +6,16 @@ import java.util.ArrayList;
 import java.util.Timer;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 /**
  * Represents a peer in the Circular DHT
  * Usage: java cdht <ID> <SUCCESSOR1> <SUCCESSOR2>
  * The peer will find and keep track of its two successors
  * A peer initialized with id = n will have a ping server at UDP port 50000 + n
+ *
+ * @author Adiswhar Rishi
  */
 public class cdht {
     public final int ID;
@@ -29,7 +33,7 @@ public class cdht {
         return udpServer;
     }
 
-    public TcpServer getTcpServer () {
+    public TcpServer getTcpServer() {
         return tcpServer;
     }
 
@@ -60,8 +64,18 @@ public class cdht {
             while ((line = reader.readLine()) != null) {
                 if (line.equals("quit")) {
                     break;
+                } else if (line.matches("request\\s+\\d+")) {
+                    Matcher m = Pattern.compile("\\d+").matcher(line);
+                    m.find();
+                    String filename = m.group();
+                    byte[] request = MessageFormatter.encodeFileRequest(self.ID, filename);
+                    InetSocketAddress address = new InetSocketAddress("localhost",
+                            self.peerTracker.getSuccessorId(1) + PORT_BASE);
+                    self.tcpServer.send(request, address);
+                    System.out.println("File request message for " + filename + " has been sent to my successor.");
+                } else {
+                    System.out.println(line);
                 }
-                System.out.println(line);
             }
             self.shutdown();
             self.udpServer.close();
@@ -133,8 +147,8 @@ public class cdht {
         ArrayList<Integer> predecessorIds = peerTracker.getPredecessors();
         ArrayList<Integer> successors = peerTracker.getSuccessors();
         if (predecessorIds == null || successors == null) return;
-        System.out.println("Sending quit to - " + predecessorIds);
-        byte[] data = MessageFormatter.encodeDepartingMessage(ID,successors);
+//        System.out.println("Sending quit to - " + predecessorIds);
+        byte[] data = MessageFormatter.encodeDepartingMessage(ID, successors);
         for (int i = 0; i < predecessorIds.size(); i++) {
             InetSocketAddress address = new InetSocketAddress("localhost", PORT_BASE + predecessorIds.get(i));
             tcpServer.send(data, address);

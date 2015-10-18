@@ -4,12 +4,20 @@ import java.util.List;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
+/**
+ * This is a static class that is used to encode, decode and generally work with messages
+ *
+ * @author Adiswhar Rishi
+ */
 public class MessageFormatter {
     public static int MAX_PING_SIZE = 2;
-    public static int MAX_TCP_SIZE = 13;
+    public static int MAX_TCP_SIZE = 17;
     private static String departingPattern = "D:(\\d+)(,\\d+)+";
     private static String sRequestPattern = "SR:(\\d+)";
     private static String sResponsePattern = "Sr:(\\d+)(,\\d+)+";
+    private static String fileRequestPattern = "FR:\\d+,\\d+";
+    private static String fileResponsePattern = "Fr:(\\d+)(,\\d+){3}";
+
 
     /* ------------------------ UDP encoding functions ----------------------------- */
 
@@ -56,6 +64,7 @@ public class MessageFormatter {
     /**
      * Determines what peer sent the message
      * NOTE: the socketAddress must have been received by a UDP message
+     *
      * @param peerAddress the address information
      * @return The peer ID
      */
@@ -113,10 +122,11 @@ public class MessageFormatter {
     /**
      * Determines what peer sent the message
      * NOTE: the socketAddress must have been received by a UDP message
+     *
      * @param request the request given by the peer
      * @return The peer ID
      */
-    public static int determineTcpPeer (byte[] request) {
+    public static int determineTcpPeer(byte[] request) {
         String input = new String(request);
         input = input.trim();
         Matcher m = Pattern.compile("\\d+").matcher(input);
@@ -124,7 +134,7 @@ public class MessageFormatter {
         return Integer.parseInt(m.group());
     }
 
-    public static byte[] encodeDepartingMessage(int peerId,List<Integer> successors) {
+    public static byte[] encodeDepartingMessage(int peerId, List<Integer> successors) {
         String s = "D:" + peerId;
         for (int i : successors) {
             s += "," + i;
@@ -157,16 +167,16 @@ public class MessageFormatter {
     }
 
     public static byte[] encodeSuccessorRequest(int requestingPeer) {
-        return ("SR:"+requestingPeer).getBytes();
+        return ("SR:" + requestingPeer).getBytes();
     }
 
-    public static boolean isSuccessorRequest (byte[] request) {
+    public static boolean isSuccessorRequest(byte[] request) {
         String input = new String(request);
         input = input.trim();
         return input.matches(sRequestPattern);
     }
 
-    public static byte[] encodeSuccessorResponse (int peerId, List<Integer> successors) {
+    public static byte[] encodeSuccessorResponse(int peerId, List<Integer> successors) {
         String s = "Sr:" + peerId;
         for (int i : successors) {
             s += "," + i;
@@ -181,7 +191,7 @@ public class MessageFormatter {
      * [2] -> successor 2
      * NOTE: The array may contain 1 or 2 successors
      */
-    public static ArrayList<Integer> decodeSuccessorResponse (byte[] data) {
+    public static ArrayList<Integer> decodeSuccessorResponse(byte[] data) {
         String input = new String(data);
         Matcher m = Pattern.compile("\\d+").matcher(input);
         ArrayList<Integer> r = new ArrayList<Integer>();
@@ -191,9 +201,67 @@ public class MessageFormatter {
         return r;
     }
 
-    public static boolean isSuccessorResponse (byte[] request) {
+    public static boolean isSuccessorResponse(byte[] request) {
         String input = new String(request);
         input = input.trim();
         return input.matches(sResponsePattern);
+    }
+
+    public static byte[] encodeFileRequest(int peerId, String filename) {
+        return ("FR:" + peerId + "," + filename).getBytes();
+    }
+
+    public static byte[] encodeFileResponse(int peerId, String filename, boolean hasFile, int requestingPeer) {
+        return ("Fr:" + peerId + "," + filename + "," + ((hasFile) ? "1" : "0") + "," + requestingPeer).getBytes();
+    }
+
+    public static boolean isFileRequest(byte[] request) {
+        String input = new String(request);
+        input = input.trim();
+        return input.matches(fileRequestPattern);
+    }
+
+    public static boolean isFileResponse(byte[] request) {
+        String input = new String(request);
+        input = input.trim();
+        return input.matches(fileResponsePattern);
+    }
+
+    /**
+     * The array returned is -
+     * [0] -> requesting peer
+     * [1] -> file name
+     *
+     * @param request the request
+     */
+    public static ArrayList<Integer> decodeFileRequest(byte[] request) {
+        String input = new String(request);
+        input = input.trim();
+        Matcher m = Pattern.compile("\\d+").matcher(input);
+        ArrayList<Integer> r = new ArrayList<Integer>();
+        while (m.find()) {
+            r.add(Integer.parseInt(m.group()));
+        }
+        return r;
+    }
+
+    /**
+     * The array returned is -
+     * [0] -> responding peer
+     * [1] -> file name (un-hashed)
+     * [2] -> 1 | 0 (based on success or failure, NOTE - unnecessary)
+     * [3] -> requesting peer (the peer who started the request)
+     *
+     * @param request the request
+     */
+    public static ArrayList<Integer> decodeFileResponse(byte[] request) {
+        String input = new String(request);
+        input = input.trim();
+        Matcher m = Pattern.compile("\\d+").matcher(input);
+        ArrayList<Integer> r = new ArrayList<Integer>();
+        while (m.find()) {
+            r.add(Integer.parseInt(m.group()));
+        }
+        return r;
     }
 }
