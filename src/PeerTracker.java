@@ -162,7 +162,7 @@ public class PeerTracker extends TimerTask {
     }
 
     /**
-     * Returns success or faliure
+     * Returns success or failure
      *
      * @param s successor id
      */

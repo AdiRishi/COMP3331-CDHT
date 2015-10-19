@@ -46,7 +46,7 @@ public class cdht {
      */
     public cdht(int self_ID, int s1_ID, int s2_ID) {
         ID = self_ID;
-        PING_RATE = 5; //seconds
+        PING_RATE = 1; //seconds
         successorPingTimer = new Timer("Successor Ping Timer");
         udpServer = new PingServer(this);
         tcpServer = new TcpServer(this);

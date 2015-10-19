@@ -122,7 +122,7 @@ public class TcpServer implements Runnable {
                     if (FileTracker.hasFile(boundPeer, "" + decodedMessage.get(1))) {
                         System.out.println("File " + decodedMessage.get(1) + " is here.");
                         byte[] response = MessageFormatter.encodeFileResponse(boundPeer.ID,
-                                "" + decodedMessage.get(0), true, decodedMessage.get(0));
+                                "" + decodedMessage.get(1), true, decodedMessage.get(0));
                         InetSocketAddress address = new InetSocketAddress("localhost",
                                 cdht.PORT_BASE + decodedMessage.get(0));
                         send(response, address);
