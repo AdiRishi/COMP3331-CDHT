@@ -15,12 +15,12 @@ import java.util.concurrent.Executors;
  * @author Adiswhar Rishi
  */
 public class TcpServer implements Runnable {
-    private cdht boundPeer;
+    private cdht_ex boundPeer;
     private ServerSocketChannel tcpServer;
     private ExecutorService threadManager;
     private boolean state;
 
-    public TcpServer(cdht boundPeer) {
+    public TcpServer(cdht_ex boundPeer) {
         this.boundPeer = boundPeer;
         threadManager = Executors.newFixedThreadPool(5);
         state = true;
@@ -111,7 +111,7 @@ public class TcpServer implements Runnable {
                     byte[] response = MessageFormatter.encodeSuccessorResponse(boundPeer.ID,
                             boundPeer.peerTracker.getSuccessors());
                     InetSocketAddress address = new InetSocketAddress("localhost",
-                            cdht.PORT_BASE + MessageFormatter.determineTcpPeer(request));
+                            cdht_ex.PORT_BASE + MessageFormatter.determineTcpPeer(request));
                     send(response, address);
                 } else if (MessageFormatter.isSuccessorResponse(request)) {
                     ArrayList<Integer> decodedMessage = MessageFormatter.decodeSuccessorResponse(request);
@@ -124,14 +124,14 @@ public class TcpServer implements Runnable {
                         byte[] response = MessageFormatter.encodeFileResponse(boundPeer.ID,
                                 "" + decodedMessage.get(1), true, decodedMessage.get(0));
                         InetSocketAddress address = new InetSocketAddress("localhost",
-                                cdht.PORT_BASE + decodedMessage.get(0));
+                                cdht_ex.PORT_BASE + decodedMessage.get(0));
                         send(response, address);
                         System.out.println("A response message, destined for peer " +
                                 decodedMessage.get(0) + ", has been sent.");
                     } else {
                         System.out.println("File " + decodedMessage.get(1) + " is not stored here.");
                         InetSocketAddress address = new InetSocketAddress("localhost",
-                                cdht.PORT_BASE + boundPeer.peerTracker.getSuccessorId(1));
+                                cdht_ex.PORT_BASE + boundPeer.peerTracker.getSuccessorId(1));
                         send(request, address);
                         System.out.println("File request message has been forwarded to my successor");
                     }

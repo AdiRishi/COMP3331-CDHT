@@ -14,13 +14,13 @@ import java.util.concurrent.Executors;
 public class PingServer implements Runnable {
     private DatagramChannel udpserver;
     private boolean state;
-    private cdht boundPeer;
+    private cdht_ex boundPeer;
     private ExecutorService threadManager;
 
     /**
      * the boundPeer given is the peer that this server will be attached to
      */
-    public PingServer(cdht boundPeer) {
+    public PingServer(cdht_ex boundPeer) {
         state = true;
         this.boundPeer = boundPeer;
         threadManager = Executors.newFixedThreadPool(3);

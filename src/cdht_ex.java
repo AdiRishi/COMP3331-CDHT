@@ -17,7 +17,7 @@ import java.util.regex.Pattern;
  *
  * @author Adiswhar Rishi
  */
-public class cdht {
+public class cdht_ex {
     public final int ID;
 
     public static final int PORT_BASE = 50000;
@@ -44,7 +44,7 @@ public class cdht {
      * @param s1_ID   range 0-255
      * @param s2_ID   range 0-255
      */
-    public cdht(int self_ID, int s1_ID, int s2_ID) {
+    public cdht_ex(int self_ID, int s1_ID, int s2_ID) {
         ID = self_ID;
         PING_RATE = 1; //seconds
         successorPingTimer = new Timer("Successor Ping Timer");
@@ -56,7 +56,7 @@ public class cdht {
 
     public static void main(String[] args) {
         if (!verifyArgs(args)) System.exit(1);
-        cdht self = new cdht(Integer.parseInt(args[0]), Integer.parseInt(args[1]), Integer.parseInt(args[2]));
+        cdht_ex self = new cdht_ex(Integer.parseInt(args[0]), Integer.parseInt(args[1]), Integer.parseInt(args[2]));
         self.initialize();
         String line;
         BufferedReader reader = new BufferedReader(new InputStreamReader(System.in));

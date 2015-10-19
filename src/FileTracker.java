@@ -11,7 +11,7 @@ public class FileTracker {
      * @param peer     the cdht to check
      * @param fileName the un-hashed filename
      */
-    public static boolean hasFile(cdht peer, String fileName) {
+    public static boolean hasFile(cdht_ex peer, String fileName) {
         boolean returnVal = false;
         int fileId = getFileId(fileName);
         int successor = peer.peerTracker.getSuccessorId(1);

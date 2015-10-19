@@ -69,7 +69,7 @@ public class MessageFormatter {
      * @return The peer ID
      */
     public static int determineUdpPeer(InetSocketAddress peerAddress) {
-        return peerAddress.getPort() - cdht.PORT_BASE;
+        return peerAddress.getPort() - cdht_ex.PORT_BASE;
     }
 
     /**

@@ -4,13 +4,13 @@ import java.util.*;
 public class PeerTracker extends TimerTask {
     private ArrayList<Peer> successors;
     private final int MAX_FAILS = 4;
-    private cdht employer;
+    private cdht_ex employer;
     //these are a list of ping Sequence numbers that are yet to be acknowledged
     private LinkedList<Integer> pastPingRequests;
     private ArrayList<Integer> deathList;
 
 
-    public PeerTracker(cdht employer, int successor1_ID, int successor2_ID) {
+    public PeerTracker(cdht_ex employer, int successor1_ID, int successor2_ID) {
         this.employer = employer;
         successors = new ArrayList<Peer>();
         successors.add(new Peer(successor1_ID));
@@ -232,11 +232,11 @@ public class PeerTracker extends TimerTask {
         }
 
         public int getUdpPort() {
-            return cdht.PORT_BASE + ID;
+            return cdht_ex.PORT_BASE + ID;
         }
 
         public int getTcpPort() {
-            return cdht.PORT_BASE + ID;
+            return cdht_ex.PORT_BASE + ID;
         }
 
         public boolean isDead() {
