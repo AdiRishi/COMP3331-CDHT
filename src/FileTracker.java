@@ -15,7 +15,7 @@ public class FileTracker {
         boolean returnVal = false;
         int fileId = getFileId(fileName);
         int successor = peer.peerTracker.getSuccessorId(1);
-        if (fileId > peer.ID) {
+        if (fileId >= peer.ID) {
             if (successor < peer.ID) {
                 returnVal = true;
             } else if (fileId < successor) {

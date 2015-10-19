@@ -133,7 +133,6 @@ public class PeerTracker extends TimerTask {
      * @param givenSucc the successor information given by said peer
      */
     public void registerSuccessorResponse(int peerId, List<Integer> givenSucc) {
-        System.out.println("A successor response was received - " + new ArrayList<Integer>(givenSucc));
         for (int s : givenSucc) {
             if (deathList.contains(s)) {
                 deathList.remove((Integer) s);
