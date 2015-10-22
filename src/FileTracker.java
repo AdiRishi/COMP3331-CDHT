@@ -15,10 +15,14 @@ public class FileTracker {
         boolean returnVal = false;
         int fileId = getFileId(fileName);
         int successor = peer.peerTracker.getSuccessorId(1);
-        if (fileId >= peer.ID) {
+        if (peer.ID > fileId) {
             if (successor < peer.ID) {
                 returnVal = true;
-            } else if (fileId < successor) {
+            }
+        } else {
+            if (successor > fileId) {
+                returnVal = true;
+            } else if (successor < peer.ID) {
                 returnVal = true;
             }
         }
