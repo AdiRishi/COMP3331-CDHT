@@ -133,12 +133,12 @@ public class TcpServer implements Runnable {
                         InetSocketAddress address = new InetSocketAddress("localhost",
                                 cdht_ex.PORT_BASE + boundPeer.peerTracker.getSuccessorId(1));
                         send(request, address);
-                        System.out.println("File request message has been forwarded to my successor");
+                        System.out.println("File request message has been forwarded to my successor.");
                     }
                 } else if (MessageFormatter.isFileResponse(request)) {
                     ArrayList<Integer> decodedMessage = MessageFormatter.decodeFileResponse(request);
                     System.out.println("Received a response message from peer " +
-                            decodedMessage.get(0) + ", which has the file " + decodedMessage.get(1));
+                            decodedMessage.get(0) + ", which has the file " + decodedMessage.get(1)+".");
                 } else {
                     //act as an echo server
                     ByteBuffer response = ByteBuffer.allocate(MessageFormatter.MAX_TCP_SIZE);

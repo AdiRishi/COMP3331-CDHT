@@ -54,7 +54,7 @@ public class PeerTracker extends TimerTask {
      * @param successorId One of the two ID's from the outer class
      */
     private void handleSuccessorDeath(int successorId) {
-        System.out.println("Peer " + successorId + " is no longer alive");
+        System.out.println("Peer " + successorId + " is no longer alive.");
         removeFromSuccessors(successorId);
         removeFromPastPings(successorId);
         //now we ask our remaining successor for its next two successors
@@ -82,7 +82,7 @@ public class PeerTracker extends TimerTask {
         for (Peer s : successors) {
             if (s.ID == peerId) {
                 if (!s.unackedPings.contains(seqNumber)) {
-                    System.out.println("Sequence number " + seqNumber + " does not exist for peer " + peerId);
+                    System.err.println("Sequence number " + seqNumber + " does not exist for peer " + peerId);
                     System.out.println(s.unackedPings);
                 } else {
                     s.unackedPings.subList(0, s.unackedPings.indexOf(seqNumber) + 1).clear();
@@ -112,7 +112,7 @@ public class PeerTracker extends TimerTask {
      * @param givenSucc the successor information given by said peer
      */
     public void registerGracefulDepart(int peerId, List<Integer> givenSucc) {
-        System.out.println("Peer " + peerId + " will depart from the network");
+        System.out.println("Peer " + peerId + " will depart from the network.");
         //the below code cleans out the left peer from past requests
         //this is useful when a successor is also a predecessor
         removeFromPastPings(peerId);
@@ -121,8 +121,8 @@ public class PeerTracker extends TimerTask {
         for (int s : givenSucc) {
             if (addToSuccessors(s)) break;
         }
-        System.out.println("My first successor is now " + ((successors.size() > 0) ? "peer " + successors.get(0) : "Nothing"));
-        System.out.println("My second successor is now " + ((successors.size() > 1) ? "peer " + successors.get(1) : "Nothing"));
+        System.out.println("My first successor is now " + ((successors.size() > 0) ? "peer " + successors.get(0) : "Nothing")+".");
+        System.out.println("My second successor is now " + ((successors.size() > 1) ? "peer " + successors.get(1) : "Nothing")+".");
     }
 
     /**
@@ -140,8 +140,8 @@ public class PeerTracker extends TimerTask {
                 if (addToSuccessors(s)) break;
             }
         }
-        System.out.println("My first successor is now " + ((successors.size() > 0) ? "peer " + successors.get(0) : "Nothing"));
-        System.out.println("My second successor is now " + ((successors.size() > 1) ? "peer " + successors.get(1) : "Nothing"));
+        System.out.println("My first successor is now " + ((successors.size() > 0) ? "peer " + successors.get(0) : "Nothing")+".");
+        System.out.println("My second successor is now " + ((successors.size() > 1) ? "peer " + successors.get(1) : "Nothing")+".");
     }
 
     private void removeFromPastPings(int peerId) {
