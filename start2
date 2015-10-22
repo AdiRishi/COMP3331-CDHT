@@ -1,0 +1,8 @@
+#!/usr/local/bin/bash
+ xterm -hold -title "Peer 0" -e "java -cp bin/ cdht_ex 0 3 40" &
+ xterm -hold -title "Peer 3" -e "java -cp bin/ cdht_ex 3 40 80" &
+ xterm -hold -title "Peer 40" -e "java -cp bin/ cdht_ex 40 80 110" &
+ xterm -hold -title "Peer 80" -e "java -cp bin/ cdht_ex 80 110 133" &
+ xterm -hold -title "Peer 110" -e "java -cp bin/ cdht_ex 110 133 255" &
+ xterm -hold -title "Peer 133" -e "java -cp bin/ cdht_ex 133 255 0" &
+ xterm -hold -title "Peer 255" -e "java -cp bin/ cdht_ex 255 0 3" &
